@@ -1,3 +1,7 @@
+### This is a customized fork of Team 254’s software for off-season and scrimmage event use only. All credit to the original authors. No redistribution intended.
+
+### Este é um fork personalizado do software da Team 254, destinado apenas ao uso em eventos off-season e scrimmages. Todos os créditos são dos autores originais. Nenhuma redistribuição é pretendida.
+
 Cheesy Arena [![Build Status](https://github.com/Team254/cheesy-arena/actions/workflows/test.yml/badge.svg)](https://github.com/Team254/cheesy-arena/actions)
 ============
 A field management system that just works.
