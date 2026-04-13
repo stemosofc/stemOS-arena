@@ -8,32 +8,32 @@ let redFoulsHashCode = 0;
 let blueFoulsHashCode = 0;
 
 // Sends the foul to the server to add it to the list.
-const addFoul = function(alliance, isMajor) {
+const addFoul = function (alliance, isMajor) {
   websocket.send("addFoul", {Alliance: alliance, IsMajor: isMajor});
 }
 
 // Toggles the foul type between minor and major.
-const toggleFoulType = function(alliance, index) {
+const toggleFoulType = function (alliance, index) {
   websocket.send("toggleFoulType", {Alliance: alliance, Index: index});
 }
 
 // Updates the team that the foul is attributed to.
-const updateFoulTeam = function(alliance, index, teamId) {
+const updateFoulTeam = function (alliance, index, teamId) {
   websocket.send("updateFoulTeam", {Alliance: alliance, Index: index, TeamId: teamId});
 }
 
 // Updates the rule that the foul is for.
-const updateFoulRule = function(alliance, index, ruleId) {
+const updateFoulRule = function (alliance, index, ruleId) {
   websocket.send("updateFoulRule", {Alliance: alliance, Index: index, RuleId: ruleId});
 }
 
 // Removes the foul with the given parameters from the list.
-var deleteFoul = function(alliance, index) {
+var deleteFoul = function (alliance, index) {
   websocket.send("deleteFoul", {Alliance: alliance, Index: index});
 };
 
 // Cycles through no card, yellow card, and red card.
-var cycleCard = function(cardButton) {
+var cycleCard = function (cardButton) {
   var newCard = "";
   if ($(cardButton).attr("data-card") === "") {
     newCard = "yellow";
@@ -48,22 +48,22 @@ var cycleCard = function(cardButton) {
 };
 
 // Sends a websocket message to signal to the volunteers that they may enter the field.
-var signalVolunteers = function() {
+var signalVolunteers = function () {
   websocket.send("signalVolunteers");
 };
 
 // Sends a websocket message to signal to the teams that they may enter the field.
-var signalReset = function() {
+var signalReset = function () {
   websocket.send("signalReset");
 };
 
 // Signals the scorekeeper that foul entry is complete for this match.
-var commitMatch = function() {
+var commitMatch = function () {
   websocket.send("commitMatch");
 };
 
 // Handles a websocket message to update the teams for the current match.
-var handleMatchLoad = function(data) {
+var handleMatchLoad = function (data) {
   $("#matchName").text(data.Match.LongName);
 
   setTeamCard("red", 1, data.Teams["R1"]);
@@ -82,7 +82,7 @@ var handleMatchLoad = function(data) {
 };
 
 // Handles a websocket message to update the match status.
-const handleMatchTime = function(data) {
+const handleMatchTime = function (data) {
   $(".control-button").attr("data-enabled", matchStates[data.MatchState] === "POST_MATCH");
 };
 
@@ -94,7 +94,7 @@ const endgameStatusNames = [
 ];
 
 // Handles a websocket message to update the realtime scoring fields.
-const handleRealtimeScore = function(data) {
+const handleRealtimeScore = function (data) {
   for (const [teamId, card] of Object.entries(Object.assign(data.RedCards, data.BlueCards))) {
     $(`[data-team="${teamId}"]`).attr("data-card", card);
   }
@@ -121,6 +121,10 @@ const handleRealtimeScore = function(data) {
     let l2_total = score.Reef.Branches[0].filter(Boolean).length;
     let l3_total = score.Reef.Branches[1].filter(Boolean).length;
     let l4_total = score.Reef.Branches[2].filter(Boolean).length;
+    let l1_auto_total = score.Reef.AutoTroughNear + score.Reef.AutoTroughFar;
+    let l2_auto_total = score.Reef.AutoBranches[0].filter(Boolean).length;
+    let l3_auto_total = score.Reef.AutoBranches[1].filter(Boolean).length;
+    let l4_auto_total = score.Reef.AutoBranches[2].filter(Boolean).length;
 
     let scoreRoot = `${alliance}ScoreSummary`;
     $(`#${scoreRoot} .team-1-leave`).text(score.LeaveStatuses[0] ? "✓" : "❌");
@@ -133,13 +137,17 @@ const handleRealtimeScore = function(data) {
     $(`#${scoreRoot} .coral-l2`).text(l2_total);
     $(`#${scoreRoot} .coral-l3`).text(l3_total);
     $(`#${scoreRoot} .coral-l4`).text(l4_total);
+    $(`#${scoreRoot} .coral-l1-auto`).text(l1_auto_total);
+    $(`#${scoreRoot} .coral-l2-auto`).text(l2_auto_total);
+    $(`#${scoreRoot} .coral-l3-auto`).text(l3_auto_total);
+    $(`#${scoreRoot} .coral-l4-auto`).text(l4_auto_total);
     $(`#${scoreRoot} .processor`).text(score.ProcessorAlgae);
     $(`#${scoreRoot} .barge`).text(score.BargeAlgae);
   }
 }
 
 // Handles a websocket message to update the scoring commit status.
-const handleScoringStatus = function(data) {
+const handleScoringStatus = function (data) {
   if (data.RefereeScoreReady) {
     $("#commitButton").attr("data-enabled", false);
   }
@@ -150,7 +158,7 @@ const handleScoringStatus = function(data) {
 }
 
 // Helper function to update a badge that shows scoring panel commit status.
-const updateScoreStatus = function(data, position, element, displayName) {
+const updateScoreStatus = function (data, position, element, displayName) {
   const status = data.PositionStatuses[position];
   $(element).text(`${displayName} ${status.NumPanelsReady}/${status.NumPanels}`);
   $(element).attr("data-present", status.NumPanels > 0);
@@ -158,7 +166,7 @@ const updateScoreStatus = function(data, position, element, displayName) {
 };
 
 // Populates the red/yellow card button for a given team.
-const setTeamCard = function(alliance, position, team) {
+const setTeamCard = function (alliance, position, team) {
   const cardButton = $(`#${alliance}Team${position}Card`);
   if (team === null) {
     cardButton.text(0);
@@ -173,7 +181,7 @@ const setTeamCard = function(alliance, position, team) {
 }
 
 // Produces a hash code of the given object for use in equality comparisons.
-const hashObject = function(object) {
+const hashObject = function (object) {
   const s = JSON.stringify(object);
   let h = 0;
   for (let i = 0; i < s.length; i++) {
@@ -182,16 +190,24 @@ const hashObject = function(object) {
   return h;
 }
 
-$(function() {
+$(function () {
   // Read the configuration for this display from the URL query string.
   var urlParams = new URLSearchParams(window.location.search);
   $(".headRef-dependent").attr("data-hr", urlParams.get("hr"));
 
   // Set up the websocket back to the server.
   websocket = new CheesyWebsocket("/panels/referee/websocket", {
-    matchLoad: function(event) { handleMatchLoad(event.data); },
-    matchTime: function(event) { handleMatchTime(event.data); },
-    realtimeScore: function(event) { handleRealtimeScore(event.data); },
-    scoringStatus: function(event) { handleScoringStatus(event.data); },
+    matchLoad: function (event) {
+      handleMatchLoad(event.data);
+    },
+    matchTime: function (event) {
+      handleMatchTime(event.data);
+    },
+    realtimeScore: function (event) {
+      handleRealtimeScore(event.data);
+    },
+    scoringStatus: function (event) {
+      handleScoringStatus(event.data);
+    },
   });
 });

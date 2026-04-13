@@ -4,13 +4,14 @@
 package web
 
 import (
+	"testing"
+
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
 	gorillawebsocket "github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAllianceSelection(t *testing.T) {
@@ -70,8 +71,11 @@ func TestAllianceSelection(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), ">110<")
 
 	// Update remainder of teams.
-	recorder = web.postHttpResponse("/alliance_selection", "selection0_0=101&selection0_1=102&selection0_2=103&"+
-		"selection1_0=104&selection1_1=105&selection1_2=106&selection2_0=107&selection2_1=108&selection2_2=109")
+	recorder = web.postHttpResponse(
+		"/alliance_selection",
+		"selection0_0=101&selection0_1=102&selection0_2=103&selection1_0=104&selection1_1=105&selection1_2=106&"+
+			"selection2_0=107&selection2_1=108&selection2_2=109",
+	)
 	assert.Equal(t, 303, recorder.Code)
 	recorder = web.getHttpResponse("/alliance_selection")
 	assert.Contains(t, recorder.Body.String(), ">110<")
@@ -127,12 +131,15 @@ func TestAllianceSelectionErrors(t *testing.T) {
 	assert.Contains(t, recorder.Body.String(), "already part of an alliance")
 
 	// Finalize early and without required parameters.
-	recorder = web.postHttpResponse("/alliance_selection/finalize",
-		"startTime=2014-01-01 01:00:00 PM&matchSpacingSec=360")
+	recorder = web.postHttpResponse(
+		"/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM&matchSpacingSec=360",
+	)
 	assert.Equal(t, 200, recorder.Code)
 	assert.Contains(t, recorder.Body.String(), "until all spots have been filled")
-	recorder = web.postHttpResponse("/alliance_selection", "selection0_0=101&selection0_1=102&selection0_2=103&"+
-		"selection1_0=104&selection1_1=105&selection1_2=106")
+	recorder = web.postHttpResponse(
+		"/alliance_selection",
+		"selection0_0=101&selection0_1=102&selection0_2=103&selection1_0=104&selection1_1=105&selection1_2=106",
+	)
 	assert.Equal(t, 303, recorder.Code)
 	recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=asdf")
 	assert.Equal(t, 200, recorder.Code)
@@ -171,8 +178,10 @@ func TestAllianceSelectionReset(t *testing.T) {
 	// Start, populate, and finalize the alliance selection.
 	recorder := web.postHttpResponse("/alliance_selection/start", "")
 	assert.Equal(t, 303, recorder.Code)
-	recorder = web.postHttpResponse("/alliance_selection", "selection0_0=101&selection0_1=102&selection0_2=103&"+
-		"selection1_0=104&selection1_1=105&selection1_2=106")
+	recorder = web.postHttpResponse(
+		"/alliance_selection",
+		"selection0_0=101&selection0_1=102&selection0_2=103&selection1_0=104&selection1_1=105&selection1_2=106",
+	)
 	assert.Equal(t, 303, recorder.Code)
 	recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM")
 	assert.Equal(t, 303, recorder.Code)
@@ -192,8 +201,10 @@ func TestAllianceSelectionReset(t *testing.T) {
 	// Start, populate, and finalize the alliance selection again.
 	recorder = web.postHttpResponse("/alliance_selection/start", "")
 	assert.Equal(t, 303, recorder.Code)
-	recorder = web.postHttpResponse("/alliance_selection", "selection0_0=101&selection0_1=102&selection0_2=103&"+
-		"selection1_0=104&selection1_1=105&selection1_2=106")
+	recorder = web.postHttpResponse(
+		"/alliance_selection",
+		"selection0_0=101&selection0_1=102&selection0_2=103&selection1_0=104&selection1_1=105&selection1_2=106",
+	)
 	assert.Equal(t, 303, recorder.Code)
 	recorder = web.postHttpResponse("/alliance_selection/finalize", "startTime=2014-01-01 01:00:00 PM")
 	assert.Equal(t, 303, recorder.Code)
@@ -315,8 +326,9 @@ func TestAllianceSelectionWebsocket(t *testing.T) {
 	defer conn.Close()
 	ws := websocket.NewTestWebsocket(conn)
 
-	// Should get a status update right after connection.
+	// Should get a few status updates right after connection.
 	readWebsocketType(t, ws, "allianceSelection")
+	readWebsocketType(t, ws, "audienceDisplayMode")
 
 	// Test starting and stopping the timer.
 	allianceSelectionMessage := struct {
@@ -327,8 +339,11 @@ func TestAllianceSelectionWebsocket(t *testing.T) {
 	assert.Equal(t, true, allianceSelectionMessage.ShowTimer)
 	ws.Write("stopTimer", nil)
 	assert.Nil(t, mapstructure.Decode(readWebsocketType(t, ws, "allianceSelection"), &allianceSelectionMessage))
+	assert.Equal(t, true, allianceSelectionMessage.ShowTimer)
+	ws.Write("hideTimer", nil)
+	assert.Nil(t, mapstructure.Decode(readWebsocketType(t, ws, "allianceSelection"), &allianceSelectionMessage))
 	assert.Equal(t, false, allianceSelectionMessage.ShowTimer)
-	ws.Write("startTimer", nil)
+	ws.Write("restartTimer", nil)
 	assert.Nil(t, mapstructure.Decode(readWebsocketType(t, ws, "allianceSelection"), &allianceSelectionMessage))
 	assert.Equal(t, true, allianceSelectionMessage.ShowTimer)
 }

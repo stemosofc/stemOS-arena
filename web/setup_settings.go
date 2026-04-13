@@ -86,6 +86,13 @@ func (web *Web) settingsPostHandler(w http.ResponseWriter, r *http.Request) {
 	eventSettings.ApChannel, _ = strconv.Atoi(r.PostFormValue("apChannel"))
 	eventSettings.SwitchAddress = r.PostFormValue("switchAddress")
 	eventSettings.SwitchPassword = r.PostFormValue("switchPassword")
+	eventSettings.SCCManagementEnabled = r.PostFormValue("sccManagementEnabled") == "on"
+	eventSettings.RedSCCAddress = r.PostFormValue("redSCCAddress")
+	eventSettings.BlueSCCAddress = r.PostFormValue("blueSCCAddress")
+	eventSettings.SCCUsername = r.PostFormValue("sccUsername")
+	eventSettings.SCCPassword = r.PostFormValue("sccPassword")
+	eventSettings.SCCUpCommands = r.PostFormValue("sccUpCommands")
+	eventSettings.SCCDownCommands = r.PostFormValue("sccDownCommands")
 	eventSettings.PlcAddress = r.PostFormValue("plcAddress")
 	eventSettings.AdminPassword = r.PostFormValue("adminPassword")
 	eventSettings.TeamSignRed1Id, _ = strconv.Atoi(r.PostFormValue("teamSignRed1Id"))
@@ -96,7 +103,37 @@ func (web *Web) settingsPostHandler(w http.ResponseWriter, r *http.Request) {
 	eventSettings.TeamSignBlue2Id, _ = strconv.Atoi(r.PostFormValue("teamSignBlue2Id"))
 	eventSettings.TeamSignBlue3Id, _ = strconv.Atoi(r.PostFormValue("teamSignBlue3Id"))
 	eventSettings.TeamSignBlueTimerId, _ = strconv.Atoi(r.PostFormValue("teamSignBlueTimerId"))
+	eventSettings.UseLiteUdpPort = r.PostFormValue("useLiteUdpPort") == "on"
 	eventSettings.BlackmagicAddresses = r.PostFormValue("blackmagicAddresses")
+	eventSettings.CompanionAddress = r.PostFormValue("companionAddress")
+	eventSettings.CompanionPort, _ = strconv.Atoi(r.PostFormValue("companionPort"))
+	eventSettings.CompanionMatchPreviewPage, _ = strconv.Atoi(r.PostFormValue("companionMatchPreviewPage"))
+	eventSettings.CompanionMatchPreviewRow, _ = strconv.Atoi(r.PostFormValue("companionMatchPreviewRow"))
+	eventSettings.CompanionMatchPreviewColumn, _ = strconv.Atoi(r.PostFormValue("companionMatchPreviewColumn"))
+	eventSettings.CompanionSetAudiencePage, _ = strconv.Atoi(r.PostFormValue("companionSetAudiencePage"))
+	eventSettings.CompanionSetAudienceRow, _ = strconv.Atoi(r.PostFormValue("companionSetAudienceRow"))
+	eventSettings.CompanionSetAudienceColumn, _ = strconv.Atoi(r.PostFormValue("companionSetAudienceColumn"))
+	eventSettings.CompanionMatchStartPage, _ = strconv.Atoi(r.PostFormValue("companionMatchStartPage"))
+	eventSettings.CompanionMatchStartRow, _ = strconv.Atoi(r.PostFormValue("companionMatchStartRow"))
+	eventSettings.CompanionMatchStartColumn, _ = strconv.Atoi(r.PostFormValue("companionMatchStartColumn"))
+	eventSettings.CompanionTeleopStartPage, _ = strconv.Atoi(r.PostFormValue("companionTeleopStartPage"))
+	eventSettings.CompanionTeleopStartRow, _ = strconv.Atoi(r.PostFormValue("companionTeleopStartRow"))
+	eventSettings.CompanionTeleopStartColumn, _ = strconv.Atoi(r.PostFormValue("companionTeleopStartColumn"))
+	eventSettings.CompanionEndgameStartPage, _ = strconv.Atoi(r.PostFormValue("companionEndgameStartPage"))
+	eventSettings.CompanionEndgameStartRow, _ = strconv.Atoi(r.PostFormValue("companionEndgameStartRow"))
+	eventSettings.CompanionEndgameStartColumn, _ = strconv.Atoi(r.PostFormValue("companionEndgameStartColumn"))
+	eventSettings.CompanionMatchEndPage, _ = strconv.Atoi(r.PostFormValue("companionMatchEndPage"))
+	eventSettings.CompanionMatchEndRow, _ = strconv.Atoi(r.PostFormValue("companionMatchEndRow"))
+	eventSettings.CompanionMatchEndColumn, _ = strconv.Atoi(r.PostFormValue("companionMatchEndColumn"))
+	eventSettings.CompanionPostResultPage, _ = strconv.Atoi(r.PostFormValue("companionPostResultPage"))
+	eventSettings.CompanionPostResultRow, _ = strconv.Atoi(r.PostFormValue("companionPostResultRow"))
+	eventSettings.CompanionPostResultColumn, _ = strconv.Atoi(r.PostFormValue("companionPostResultColumn"))
+	eventSettings.CompanionAllianceSelectionPage, _ = strconv.Atoi(r.PostFormValue("companionAllianceSelectionPage"))
+	eventSettings.CompanionAllianceSelectionRow, _ = strconv.Atoi(r.PostFormValue("companionAllianceSelectionRow"))
+	eventSettings.CompanionAllianceSelectionColumn, _ = strconv.Atoi(r.PostFormValue("companionAllianceSelectionColumn"))
+	eventSettings.CompanionMatchAbortPage, _ = strconv.Atoi(r.PostFormValue("companionMatchAbortPage"))
+	eventSettings.CompanionMatchAbortRow, _ = strconv.Atoi(r.PostFormValue("companionMatchAbortRow"))
+	eventSettings.CompanionMatchAbortColumn, _ = strconv.Atoi(r.PostFormValue("companionMatchAbortColumn"))
 	eventSettings.WarmupDurationSec, _ = strconv.Atoi(r.PostFormValue("warmupDurationSec"))
 	eventSettings.AutoDurationSec, _ = strconv.Atoi(r.PostFormValue("autoDurationSec"))
 	eventSettings.PauseDurationSec, _ = strconv.Atoi(r.PostFormValue("pauseDurationSec"))
@@ -106,6 +143,7 @@ func (web *Web) settingsPostHandler(w http.ResponseWriter, r *http.Request) {
 	eventSettings.CoralBonusPerLevelThreshold, _ = strconv.Atoi(r.PostFormValue("coralBonusPerLevelThreshold"))
 	eventSettings.CoralBonusCoopEnabled = r.PostFormValue("coralBonusCoopEnabled") == "on"
 	eventSettings.BargeBonusPointThreshold, _ = strconv.Atoi(r.PostFormValue("bargeBonusPointThreshold"))
+	eventSettings.IncludeAlgaeInBargeBonus = r.PostFormValue("includeAlgaeInBargeBonus") == "on"
 
 	err := web.arena.Database.UpdateEventSettings(eventSettings)
 	if err != nil {
@@ -137,8 +175,9 @@ func (web *Web) saveDbHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename := fmt.Sprintf("%s-%s.db", strings.Replace(web.arena.EventSettings.Name, " ", "_", -1),
-		time.Now().Format("20060102150405"))
+	filename := fmt.Sprintf(
+		"%s-%s.db", strings.Replace(web.arena.EventSettings.Name, " ", "_", -1), time.Now().Format("20060102150405"),
+	)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
 	if err := web.arena.Database.WriteBackup(w); err != nil {
@@ -176,8 +215,9 @@ func (web *Web) restoreDbHandler(w http.ResponseWriter, r *http.Request) {
 	tempFile.Close()
 	tempDb, err := model.OpenDatabase(tempFilePath)
 	if err != nil {
-		web.renderSettings(w, r, "Could not read uploaded database backup file. Please verify that it a valid "+
-			"database file.")
+		web.renderSettings(
+			w, r, "Could not read uploaded database backup file. Please verify that it a valid database file.",
+		)
 		return
 	}
 	tempDb.Close()
